@@ -4,7 +4,7 @@ from book.models import Book, BookDetail
 
 
 class BookDetailSerializer(serializers.ModelSerializer):
-    id = serializers.IntegerField(required=False)
+    id = serializers.IntegerField(required=False, read_only=True)
 
     class Meta:
         model = BookDetail
