@@ -7,7 +7,7 @@ from rest_framework.viewsets import ModelViewSet
 
 from book.models import Book
 from book.serializers import BookReadSerializer, BookWriteSerializer
-from book.utils import render_to_pdf
+from book.utils import render_to_pdf, populate_from_csv
 
 
 class BookViewSet(ModelViewSet):
@@ -20,10 +20,9 @@ class BookViewSet(ModelViewSet):
 
 
 class PDFWrite(APIView):
-
     def get(self, request):
         try:
-            book = Book.objects.filter(author='Nitesh Paudel').latest('created')
+            book = Book.objects.all().latest('created')
             if book:
                 data = {
                     'today': datetime.date.today(),
@@ -41,5 +40,21 @@ class PDFWrite(APIView):
                     return response
         except:
             return Response({
-                'message': 'Book matching author not found'
+                'message': "Can't create pdf"
+            }, status=status.HTTP_200_OK)
+
+
+class CSVWrite(APIView):
+    @staticmethod
+    def get(request):
+        try:
+            # fields = ['author']
+            # books = Book.objects.values_list(fields)
+            books = Book.objects.all()
+            csv_file_name = 'author.csv'
+            data = populate_from_csv(books, csv_file_name)
+            return HttpResponse(data, content_type='text/csv')
+        except:
+            return Response({
+                'message': 'Can not create CSV file'
             }, status=status.HTTP_200_OK)
