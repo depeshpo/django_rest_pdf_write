@@ -1,11 +1,14 @@
 import datetime
 from django.http import HttpResponse
+from django.views.generic import TemplateView
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from weasyprint import HTML, CSS
 
 from book.models import Book
+from book.pdf import PDFTemplateResponseMixin
 from book.serializers import BookReadSerializer, BookWriteSerializer
 from book.utils import render_to_pdf, populate_from_csv
 
@@ -58,3 +61,15 @@ class CSVWrite(APIView):
             return Response({
                 'message': 'Can not create CSV file'
             }, status=status.HTTP_200_OK)
+
+
+class MyPDFWrite(TemplateView, PDFTemplateResponseMixin):
+    template_name = "my_folder/book.html"
+    filename = 'book-invoice.html'
+
+    def get_context_data(self, **kwargs):
+        book = Book.objects.all().latest('created')
+        context = super(MyPDFWrite, self).get_context_data(**kwargs)
+        context['books'] = book
+        return context
+
