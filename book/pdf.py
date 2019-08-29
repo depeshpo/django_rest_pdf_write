@@ -1,5 +1,4 @@
-from weasyprint import HTML, CSS
-from django.conf import settings
+from weasyprint import HTML
 from django.template.response import TemplateResponse
 from django.views.generic.base import TemplateResponseMixin, TemplateView
 
@@ -19,10 +18,7 @@ class PDFTemplateResponse(TemplateResponse):
     def rendered_content(self):
         """Returns the rendered pdf"""
         html = super(PDFTemplateResponse, self).rendered_content
-        if hasattr(settings, 'WEASYPRINT_BASEURL'):
-            base_url = settings.WEASYPRINT_BASEURL
-        else:
-            base_url = self._request.build_absolute_uri("/")
+        base_url = self._request.build_absolute_uri("/")
         pdf = HTML(string=html, base_url=base_url).write_pdf()
         return pdf
 
@@ -43,3 +39,7 @@ class PDFTemplateResponseMixin(TemplateResponseMixin):
         """
         kwargs['filename'] = self.get_filename()
         return super(PDFTemplateResponseMixin, self).render_to_response(*args, **kwargs)
+
+
+class PDFTemplateView(TemplateView, PDFTemplateResponseMixin):
+    pass
