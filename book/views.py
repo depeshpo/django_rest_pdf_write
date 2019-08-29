@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework import filters
 
 from book.models import Book
 from book.pdf import PDFTemplateView
@@ -13,6 +14,9 @@ from book.utils import render_to_pdf, populate_from_csv
 
 class BookViewSet(ModelViewSet):
     queryset = Book.objects.all()
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['author', 'name', 'detail__detail']
+    ordering_fields = ['author', 'name']
 
     def get_serializer_class(self):
         if self.request.method == 'GET':

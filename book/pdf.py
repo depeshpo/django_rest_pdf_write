@@ -8,7 +8,7 @@ class PDFTemplateResponse(TemplateResponse):
     def __init__(self, filename=None, *args, **kwargs):
         kwargs['content_type'] = "application/pdf"
         super(PDFTemplateResponse, self).__init__(*args, **kwargs)
-        disposition = 'inline'
+        disposition = 'attachment'
         if filename:
             self['Content-Disposition'] = '{}; filename="{}"'.format(disposition, filename)
         else:
