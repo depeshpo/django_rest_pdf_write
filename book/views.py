@@ -1,5 +1,7 @@
 import datetime
 from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.writer.excel import save_virtual_workbook
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -9,7 +11,7 @@ from rest_framework import filters
 from book.models import Book
 from book.pdf import PDFTemplateView
 from book.serializers import BookReadSerializer, BookWriteSerializer
-from book.utils import render_to_pdf, populate_from_csv
+from book.utils import render_to_pdf, export_to_csv, export_to_excel
 
 
 class BookViewSet(ModelViewSet):
@@ -53,13 +55,13 @@ class CSVWrite(APIView):
     @staticmethod
     def get(request):
         try:
-            # fields = ['author']
-            # books = Book.objects.values_list(fields)
+            fields = ['author', 'detail']
             books = Book.objects.all()
             csv_file_name = 'author.csv'
-            data = populate_from_csv(books, csv_file_name)
+            data = export_to_csv(queryset=books, fields=fields, file_name=csv_file_name)
             return HttpResponse(data, content_type='text/csv')
-        except:
+        except Exception as e:
+            print(e)
             return Response({
                 'message': 'Can not create CSV file'
             }, status=status.HTTP_200_OK)
@@ -84,3 +86,18 @@ class TicketPDF(PDFTemplateView):
 class ReportPDF(PDFTemplateView):
     template_name = 'my_folder/report/report.html'
     filename = 'report.pdf'
+
+
+class BooksRecordExcel(APIView):
+    def get(self, request):
+        try:
+            books = Book.objects.all()
+            file_name = 'books-excel.xlsx'
+            field_names = ['ID', 'Name', 'Author', 'Created at', 'Detail']
+            kwargs = {"file_name": file_name, "field_names": field_names}
+            data = export_to_excel(books, **kwargs)
+            return data
+        except:
+            return Response({
+                'message': 'Can not create Excel File'
+            }, status=status.HTTP_200_OK)
