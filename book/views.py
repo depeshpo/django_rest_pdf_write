@@ -57,9 +57,8 @@ class CSVWrite(APIView):
             books = Book.objects.all()
             csv_file_name = 'author'
             data = export_to_csv(queryset=books, fields=fields, file_name=csv_file_name)
-            return HttpResponse(data, content_type='text/csv')
-        except Exception as e:
-            print(e)
+            return data
+        except:
             return Response({
                 'message': 'Can not create CSV file'
             }, status=status.HTTP_200_OK)
