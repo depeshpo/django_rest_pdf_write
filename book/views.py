@@ -1,7 +1,5 @@
 import datetime
 from django.http import HttpResponse
-from openpyxl import Workbook
-from openpyxl.writer.excel import save_virtual_workbook
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -57,7 +55,7 @@ class CSVWrite(APIView):
         try:
             fields = ['author', 'detail']
             books = Book.objects.all()
-            csv_file_name = 'author.csv'
+            csv_file_name = 'author'
             data = export_to_csv(queryset=books, fields=fields, file_name=csv_file_name)
             return HttpResponse(data, content_type='text/csv')
         except Exception as e:

@@ -21,7 +21,7 @@ def export_to_csv(queryset, fields, file_name):
     model = queryset.model
     response = HttpResponse(content_type='text/csv')
     # force download
-    response['Content-Disposition'] = 'attachment;filename=%s' % file_name
+    response['Content-Disposition'] = 'attachment; filename={}.csv'.format(file_name)
     # the csv writer
     writer = csv.writer(response)
     if fields:
