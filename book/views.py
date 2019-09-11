@@ -9,7 +9,7 @@ from rest_framework import filters
 from book.models import Book
 from book.pdf import PDFTemplateView
 from book.serializers import BookReadSerializer, BookWriteSerializer
-from book.utils import render_to_pdf, export_to_csv, export_to_excel
+from book.utils import render_to_pdf, export_to_csv, export_excel
 
 
 class BookViewSet(ModelViewSet):
@@ -53,10 +53,11 @@ class CSVWrite(APIView):
     @staticmethod
     def get(request):
         try:
-            fields = ['author', 'detail']
+            titles = ['Author', 'Detail']
+            fields = ['author', 'detail__detail']
             books = Book.objects.all()
             csv_file_name = 'author'
-            data = export_to_csv(queryset=books, fields=fields, file_name=csv_file_name)
+            data = export_to_csv(queryset=books, fields=fields, titles=titles, file_name=csv_file_name)
             return data
         except:
             return Response({
@@ -86,15 +87,17 @@ class ReportPDF(PDFTemplateView):
 
 
 class BooksRecordExcel(APIView):
-    def get(self, request):
+    @staticmethod
+    def get(request):
         try:
             books = Book.objects.all()
-            file_name = 'books-excel.xlsx'
-            field_names = ['ID', 'Name', 'Author', 'Created at', 'Detail']
-            kwargs = {"file_name": file_name, "field_names": field_names}
-            data = export_to_excel(books, **kwargs)
+            file_name = 'books-excel'
+            titles = ['Name', 'Author', 'Detail']
+            fields = ['name', 'author', 'detail__detail']
+            data = export_excel(queryset=books, fields=fields, titles=titles, file_name=file_name)
             return data
-        except:
+        except Exception as e:
+            print(e)
             return Response({
                 'message': 'Can not create Excel File'
             }, status=status.HTTP_200_OK)

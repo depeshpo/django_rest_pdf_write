@@ -3,8 +3,9 @@ from io import BytesIO
 from django.http import HttpResponse
 from django.template.loader import get_template
 from openpyxl import Workbook
-
 from xhtml2pdf import pisa
+
+from book.models import BookDetail
 
 
 def render_to_pdf(template_src, context_dict={}):
@@ -17,7 +18,7 @@ def render_to_pdf(template_src, context_dict={}):
     return None
 
 
-def export_to_csv(queryset, fields, file_name):
+def export_to_csv(queryset, fields, titles, file_name):
     model = queryset.model
     response = HttpResponse(content_type='text/csv')
     # force download
@@ -26,52 +27,79 @@ def export_to_csv(queryset, fields, file_name):
     writer = csv.writer(response)
     if fields:
         headers = fields
+        if titles:
+            titles = titles
+        else:
+            titles = headers
     else:
         headers = []
         for field in model._meta.fields:
             headers.append(field.name)
-    writer.writerow(headers)
+        titles = headers
+
+    # Writes the title for the file
+    writer.writerow(titles)
+
+    def nested_getattr(obj, attribute, split_rule='__'):
+        split_attr = attribute.split(split_rule)
+        for attr in split_attr:
+            if not obj:
+                break
+            obj = getattr(obj, attr)
+        return obj
 
     # write data rows
     for item in queryset:
-        writer.writerow([getattr(item, field) for field in headers])
+        writer.writerow([nested_getattr(item, field) for field in headers])
     return response
 
 
 export_to_csv.short_description = "Download selected as csv"
 
 
-def export_to_excel(queryset, **kwargs):
-    field_names = kwargs['field_names']
-    file_name = kwargs['file_name']
+def export_excel(queryset, fields, titles, file_name):
+    model = queryset.model
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
     response['Content-Disposition'] = 'attachment; filename={file_name}.xlsx'.format(file_name=file_name)
     workbook = Workbook()
     worksheet = workbook.active
-    worksheet.title = 'Books'
-
+    worksheet.title = file_name
     row_num = 1
 
+    if fields:
+        headers = fields
+        if titles:
+            titles = titles
+        else:
+            titles = headers
+    else:
+        headers = []
+        for field in model._meta.fields:
+            headers.append(field.name)
+        titles = headers
+
     # Assign the titles for each cell of the header
-    for col_num, column_title in enumerate(field_names, 1):
+    for col_num, column_title in enumerate(titles, 1):
         cell = worksheet.cell(row=row_num, column=col_num)
         cell.value = column_title
 
-    # Iterate over all books
-    for book in queryset:
+    def nested_getattr(obj, attribute, split_rule='__'):
+        split_attr = attribute.split(split_rule)
+        for attr in split_attr:
+            if not obj:
+                break
+            obj = getattr(obj, attr)
+        return obj
+
+    # Iterate over queryset
+    for item in queryset:
         row_num += 1
-        row = [
-            book.id,
-            book.name,
-            book.author,
-            book.created,
-            book.detail.detail
-        ]
-        # Writing each record in new a row
+        row = [nested_getattr(item, field) for field in headers]
+        # writing each record in new row
         for col_num, cell_value in enumerate(row, 1):
             cell = worksheet.cell(row=row_num, column=col_num)
-            cell.value = cell_value
+            cell.value = str(cell_value)
 
     workbook.save(response)
     return response
